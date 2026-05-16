@@ -9,25 +9,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Helper: generate unique short code (6 chars alphanumeric)
+
 function generateShortCode() {
   return Math.random().toString(36).substring(2, 8);
 }
 
-// 1. POST /shorten – create short URL
+
 app.post('/shorten', async (req, res) => {
   try {
     let { longUrl, customCode } = req.body;
     if (!longUrl) return res.status(400).json({ error: 'longUrl is required' });
 
-    // Validate URL format (simple)
+    
     if (!longUrl.startsWith('http://') && !longUrl.startsWith('https://')) {
       longUrl = 'https://' + longUrl;
     }
 
     let shortCode = customCode;
     if (!shortCode) {
-      // generate unique code
+      
       let exists = true;
       while (exists) {
         shortCode = generateShortCode();
@@ -35,7 +35,7 @@ app.post('/shorten', async (req, res) => {
         if (!existing) exists = false;
       }
     } else {
-      // check if custom code already taken
+      
       const existing = await prisma.shortUrl.findUnique({ where: { shortCode } });
       if (existing) {
         return res.status(409).json({ error: 'Custom code already taken' });
@@ -48,7 +48,7 @@ app.post('/shorten', async (req, res) => {
 
     res.json({
       shortCode: newUrl.shortCode,
-      shortUrl: `http://localhost:5000/${newUrl.shortCode}`, // replace domain in production
+      shortUrl: `http://localhost:5000/${newUrl.shortCode}`, 
       longUrl: newUrl.longUrl,
     });
   } catch (err) {
@@ -57,7 +57,7 @@ app.post('/shorten', async (req, res) => {
   }
 });
 
-// 2. GET /:shortCode – redirect
+
 app.get('/:shortCode', async (req, res) => {
   try {
     const { shortCode } = req.params;
@@ -66,7 +66,7 @@ app.get('/:shortCode', async (req, res) => {
       return res.status(404).send('Short URL not found');
     }
 
-    // increment click count (don't await – fire and forget)
+    
     prisma.shortUrl.update({
       where: { shortCode },
       data: { clicks: { increment: 1 } },
@@ -78,7 +78,7 @@ app.get('/:shortCode', async (req, res) => {
   }
 });
 
-// 3. GET /stats/:shortCode – get stats
+
 app.get('/stats/:shortCode', async (req, res) => {
   try {
     const { shortCode } = req.params;
